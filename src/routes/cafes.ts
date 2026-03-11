@@ -6,7 +6,7 @@ export const cafeRouter = Router();
 // GET /api/cafes — list all cafés (with optional query filters)
 cafeRouter.get('/', async (req: Request, res: Response) => {
   try {
-    const { vibe, area, maxPrice, trending, isNewCafe } = req.query;
+    const { vibe, area, maxPrice, trending, isNewCafe, page, limit } = req.query;
 
     const query: any = {};
 
@@ -39,6 +39,30 @@ cafeRouter.get('/', async (req: Request, res: Response) => {
       query.isNewCafe = true;
     }
 
+    // If pagination params are present, return paginated data
+    if (page || limit) {
+      const pageNum = parseInt(page as string, 10) || 1;
+      const limitNum = parseInt(limit as string, 10) || 20;
+      const skip = (pageNum - 1) * limitNum;
+
+      const [results, total] = await Promise.all([
+        Cafe.find(query).skip(skip).limit(limitNum),
+        Cafe.countDocuments(query),
+      ]);
+
+      res.json({
+        data: results,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum),
+        },
+      });
+      return;
+    }
+
+    // Otherwise, return backward-compatible array
     const results = await Cafe.find(query);
     res.json(results);
   } catch (error) {
