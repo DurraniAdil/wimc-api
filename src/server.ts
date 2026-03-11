@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './db.js';
 import { cafeRouter } from './routes/cafes.js';
+import { adminRouter } from './routes/admin.js';
 
 dotenv.config();
 connectDB();
@@ -16,6 +17,7 @@ app.use(express.json());
 
 // ── Routes ──────────────────────────────────────────────────
 app.use('/api/cafes', cafeRouter);
+app.use('/api/admin', adminRouter);
 
 // ── Health check ────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
