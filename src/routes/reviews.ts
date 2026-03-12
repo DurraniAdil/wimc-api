@@ -35,6 +35,22 @@ router.post('/cafes/:id/reviews', async (req: Request, res: Response) => {
         });
 
         await review.save();
+
+        // Update Cafe rating
+        const cafe = await Cafe.findOne({ id: cafeId });
+        if (cafe) {
+            cafe.userRatingTotal += rating;
+            cafe.userReviewCount += 1;
+            
+            const totalCount = cafe.googleReviewCount + cafe.userReviewCount;
+            if (totalCount > 0) {
+                cafe.displayRating = parseFloat(((cafe.googleRating * cafe.googleReviewCount + cafe.userRatingTotal) / totalCount).toFixed(1));
+            }
+            cafe.displayReviewCount = totalCount;
+            
+            await cafe.save();
+        }
+
         res.status(201).json(review);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -107,6 +123,23 @@ router.delete('/admin/reviews/:reviewId', requireAdmin, async (req: Request, res
         if (!review) {
             res.status(404).json({ error: 'Review not found' });
             return;
+        }
+
+        // Update Cafe rating
+        const cafe = await Cafe.findOne({ id: review.cafeId });
+        if (cafe) {
+            cafe.userRatingTotal -= review.rating;
+            cafe.userReviewCount -= 1;
+            
+            const totalCount = cafe.googleReviewCount + cafe.userReviewCount;
+            if (totalCount > 0) {
+                cafe.displayRating = parseFloat(((cafe.googleRating * cafe.googleReviewCount + cafe.userRatingTotal) / totalCount).toFixed(1));
+            } else {
+                cafe.displayRating = 0;
+            }
+            cafe.displayReviewCount = totalCount;
+            
+            await cafe.save();
         }
 
         res.json({ message: 'Review hidden successfully', review });

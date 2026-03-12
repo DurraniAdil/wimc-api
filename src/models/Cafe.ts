@@ -34,7 +34,12 @@ export interface ICafe extends Document {
     isTrending: boolean;
     addedOn: string;
     verified: boolean;
-    rating: number;
+    googleRating: number;
+    googleReviewCount: number;
+    userRatingTotal: number;
+    userReviewCount: number;
+    displayRating: number;
+    displayReviewCount: number;
     zone: string;
 }
 
@@ -72,7 +77,12 @@ const cafeSchema = new Schema<ICafe>({
     isTrending: { type: Boolean, default: false },
     addedOn: { type: String, default: '' },
     verified: { type: Boolean, default: false },
-    rating: { type: Number, default: 0 },
+    googleRating: { type: Number, default: 0 },
+    googleReviewCount: { type: Number, default: 0 },
+    userRatingTotal: { type: Number, default: 0 },
+    userReviewCount: { type: Number, default: 0 },
+    displayRating: { type: Number, default: 0 },
+    displayReviewCount: { type: Number, default: 0 },
     zone: { type: String, default: '' },
 });
 
