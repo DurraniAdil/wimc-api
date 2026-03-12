@@ -5,6 +5,7 @@ import { connectDB } from './db.js';
 import { cafeRouter } from './routes/cafes.js';
 import { adminRouter } from './routes/admin.js';
 import { uploadRouter } from './routes/upload.js';
+import reviewsRouter from './routes/reviews.js';
 
 dotenv.config();
 connectDB();
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use('/api/cafes', cafeRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api', reviewsRouter);
 
 // ── Health check ────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
