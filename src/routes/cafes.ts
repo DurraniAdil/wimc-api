@@ -7,9 +7,18 @@ export const cafeRouter = Router();
 // GET /api/cafes — list all cafés (with optional query filters)
 cafeRouter.get('/', async (req: Request, res: Response) => {
   try {
-    const { vibe, area, maxPrice, trending, isNewCafe, page, limit } = req.query;
+    const { vibe, area, maxPrice, trending, isNewCafe, page, limit, search } = req.query;
 
     const query: any = {};
+
+    // Full-text search (name, area, description)
+    if (typeof search === 'string' && search.trim()) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { area: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
 
     // Filter by vibe (e.g. ?vibe=Study)
     if (typeof vibe === 'string') {
@@ -68,6 +77,92 @@ cafeRouter.get('/', async (req: Request, res: Response) => {
     res.json(results);
   } catch (error) {
     console.error('Error fetching cafes:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+// GET /api/cafes/trending — list trending cafés
+cafeRouter.get('/trending', async (req: Request, res: Response) => {
+  try {
+    const results = await Cafe.find({ isTrending: true }).sort({ rating: -1 });
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching trending cafes:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// GET /api/cafes/new — list new cafés
+cafeRouter.get('/new', async (req: Request, res: Response) => {
+  try {
+    const results = await Cafe.find({ isNewCafe: true }).sort({ addedOn: -1 });
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching new cafes:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// GET /api/cafes/random — get a single random café
+cafeRouter.get('/random', async (req: Request, res: Response) => {
+  try {
+    const results = await Cafe.aggregate([{ $sample: { size: 1 } }]);
+    if (results.length === 0) {
+      res.status(404).json({ error: 'No cafés found' });
+      return;
+    }
+    res.json(results[0]);
+  } catch (error) {
+    console.error('Error fetching random cafe:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// GET /api/cafes/nearby — list cafés sorted by distance
+cafeRouter.get('/nearby', async (req: Request, res: Response) => {
+  try {
+    const { lat, lng, radius } = req.query;
+    if (!lat || !lng) {
+      res.status(400).json({ error: 'Latitude and Longitude are required' });
+      return;
+    }
+
+    const userLat = parseFloat(lat as string);
+    const userLng = parseFloat(lng as string);
+    const rKm = parseFloat(radius as string) || 3;
+
+    const cafes = await Cafe.find({
+      latitude: { $ne: null },
+      longitude: { $ne: null }
+    });
+
+    const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      const R = 6371; // Earth radius in km
+      const dLat = (lat2 - lat1) * (Math.PI / 180);
+      const dLon = (lon2 - lon1) * (Math.PI / 180);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) *
+          Math.cos(lat2 * (Math.PI / 180)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
+    const nearbyCafes = cafes
+      .map((cafe) => {
+        const distance = haversine(userLat, userLng, cafe.latitude, cafe.longitude);
+        return {
+          ...cafe.toObject(),
+          distanceKm: parseFloat(distance.toFixed(2))
+        };
+      })
+      .filter((cafe) => cafe.distanceKm <= rKm)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+
+    res.json(nearbyCafes);
+  } catch (error) {
+    console.error('Error fetching nearby cafes:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
