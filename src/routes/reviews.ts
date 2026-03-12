@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
-import Review from '../models/Review';
-import { Cafe } from '../models/Cafe';
-import { requireAdmin } from '../middleware/auth';
+import Review from '../models/Review.js';
+import { Cafe } from '../models/Cafe.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
