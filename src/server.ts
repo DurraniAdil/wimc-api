@@ -6,6 +6,9 @@ import { cafeRouter } from './routes/cafes.js';
 import { adminRouter } from './routes/admin.js';
 import { uploadRouter } from './routes/upload.js';
 import reviewsRouter from './routes/reviews.js';
+import { authRouter } from './routes/auth.js';
+import { userRouter } from './routes/user.js';
+import { collectionsRouter } from './routes/collections.js';
 
 dotenv.config();
 connectDB();
@@ -22,6 +25,9 @@ app.use('/api/cafes', cafeRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api', reviewsRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/user', userRouter);
+app.use('/api/collections', collectionsRouter);
 
 // ── Health check ────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
