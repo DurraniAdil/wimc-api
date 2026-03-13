@@ -54,6 +54,7 @@ export const sendWelcomeEmail = async (
   toEmail: string,
   name: string
 ) => {
+  const transporter = getTransporter();
   await transporter.sendMail({
     from: `"WIMC" <${process.env.GMAIL_USER}>`,
     to: toEmail,
