@@ -1,12 +1,18 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD
+const getTransporter = () => {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    throw new Error('Gmail configuration missing');
   }
-});
+  
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD
+    }
+  });
+};
 
 export const checkEmailConfig = () => {
   return !!(
@@ -21,6 +27,7 @@ export const sendPasswordResetEmail = async (
   resetToken: string
 ) => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+  const transporter = getTransporter();
 
   await transporter.sendMail({
     from: `"WIMC" <${process.env.GMAIL_USER}>`,

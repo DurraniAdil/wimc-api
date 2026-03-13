@@ -1,6 +1,8 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { connectDB } from './db.js';
 import { cafeRouter } from './routes/cafes.js';
 import { adminRouter } from './routes/admin.js';
@@ -11,7 +13,6 @@ import { userRouter } from './routes/user.js';
 import { collectionsRouter } from './routes/collections.js';
 import { checkEmailConfig } from './utils/sendEmail.js';
 
-dotenv.config();
 connectDB();
 
 const app = express();
@@ -34,7 +35,7 @@ app.use('/api', reviewsRouter);
 app.get('/api/health', (_req, res) => {
   res.json({ 
     status: 'ok', 
-    v: 'v7', 
+    v: 'v8', 
     mailConfig: checkEmailConfig(),
     timestamp: new Date().toISOString() 
   });
