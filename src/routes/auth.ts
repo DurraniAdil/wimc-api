@@ -94,8 +94,13 @@ authRouter.post('/forgot-password', async (req, res) => {
     try {
       await sendPasswordResetEmail(user.email, resetToken);
     } catch (emailError: any) {
-      console.error('SendGrid error:', emailError.response?.body || emailError);
-      return res.status(500).json({ message: emailError.message || 'Error sending reset email' });
+      console.error('SendGrid error detail:', JSON.stringify(emailError.response?.body || emailError, null, 2));
+      
+      // Extract specific SendGrid error message if available
+      const sgError = emailError.response?.body?.errors?.[0]?.message;
+      return res.status(500).json({ 
+        message: sgError || emailError.message || 'Error sending reset email' 
+      });
     }
 
     res.json({ message: 'If that email exists, a reset link has been sent.' });
