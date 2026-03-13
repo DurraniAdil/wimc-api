@@ -99,7 +99,12 @@ authRouter.post('/forgot-password', async (req, res) => {
     } catch (emailError: any) {
       console.error('Email error:', emailError);
       return res.status(500).json({ 
-        message: emailError.message || 'Error sending reset email' 
+        message: emailError.message || 'Error sending reset email',
+        debug: {
+          code: emailError.code,
+          command: emailError.command,
+          response: emailError.response
+        }
       });
     }
 

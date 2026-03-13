@@ -9,7 +9,11 @@ const transporter = nodemailer.createTransport({
 });
 
 export const checkEmailConfig = () => {
-  return !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
+  return !!(
+    process.env.GMAIL_USER && 
+    process.env.GMAIL_APP_PASSWORD && 
+    process.env.FRONTEND_URL
+  );
 };
 
 export const sendPasswordResetEmail = async (
