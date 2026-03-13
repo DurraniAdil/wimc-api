@@ -9,7 +9,7 @@ import reviewsRouter from './routes/reviews.js';
 import { authRouter } from './routes/auth.js';
 import { userRouter } from './routes/user.js';
 import { collectionsRouter } from './routes/collections.js';
-import { checkSendGridConfig } from './utils/sendEmail.js';
+import { checkEmailConfig } from './utils/sendEmail.js';
 
 dotenv.config();
 connectDB();
@@ -34,8 +34,8 @@ app.use('/api', reviewsRouter);
 app.get('/api/health', (_req, res) => {
   res.json({ 
     status: 'ok', 
-    v: 'v4', 
-    mailConfig: checkSendGridConfig(),
+    v: 'v6', 
+    mailConfig: checkEmailConfig(),
     timestamp: new Date().toISOString() 
   });
 });

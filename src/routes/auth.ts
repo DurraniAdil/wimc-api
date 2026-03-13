@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { User } from '../models/User.js';
-import { sendPasswordResetEmail } from '../utils/sendEmail.js';
+import { sendPasswordResetEmail, sendWelcomeEmail } from '../utils/sendEmail.js';
 
 export const authRouter = express.Router();
 
@@ -28,6 +28,9 @@ authRouter.post('/register', async (req, res) => {
     });
 
     await newUser.save();
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(newUser.email, newUser.name).catch(err => console.error('Welcome email error:', err));
 
     const token = jwt.sign({ id: newUser._id }, JWT_SECRET, { expiresIn: '7d' });
 
@@ -86,20 +89,17 @@ authRouter.post('/forgot-password', async (req, res) => {
     user.resetPasswordExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
     await user.save({ validateBeforeSave: false });
 
-    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
-      console.error('SendGrid configuration missing');
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      console.error('Gmail configuration missing');
       return res.status(500).json({ message: 'Email service configuration missing' });
     }
 
     try {
       await sendPasswordResetEmail(user.email, resetToken);
     } catch (emailError: any) {
-      console.error('SendGrid error detail:', JSON.stringify(emailError.response?.body || emailError, null, 2));
-      
-      // Extract specific SendGrid error message if available
-      const sgError = emailError.response?.body?.errors?.[0]?.message;
+      console.error('Email error:', emailError);
       return res.status(500).json({ 
-        message: sgError || emailError.message || 'Error sending reset email' 
+        message: emailError.message || 'Error sending reset email' 
       });
     }
 
