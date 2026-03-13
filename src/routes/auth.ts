@@ -51,11 +51,13 @@ authRouter.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
+      console.log(`Login failed: User not found for email ${email}`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log(`Login failed: Password mismatch for email ${email}`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 

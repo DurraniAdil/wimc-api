@@ -35,7 +35,7 @@ app.use('/api', reviewsRouter);
 app.get('/api/health', (_req, res) => {
   res.json({ 
     status: 'ok', 
-    v: 'v8', 
+    v: 'v9', 
     mailConfig: checkEmailConfig(),
     timestamp: new Date().toISOString() 
   });
