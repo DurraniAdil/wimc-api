@@ -8,6 +8,8 @@ export interface IUser extends Document {
   picture?: string;
   joinedAt: Date;
   reviewCount: number;
+  resetPasswordToken?: string;
+  resetPasswordExpiry?: Date;
   collections: {
     hearted: string[];
     visited: Array<{
@@ -29,9 +31,11 @@ const UserSchema: Schema = new Schema({
     hearted: [{ type: String }],
     visited: [{
       id: { type: String, required: true },
-      date: { type: String, required: true }
+      date: { type: Date, default: Date.now }
     }]
-  }
+  },
+  resetPasswordToken: { type: String, select: false },
+  resetPasswordExpiry: { type: Date, select: false }
 });
 
 // Hash password before save

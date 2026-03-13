@@ -1,13 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { User, IUser } from '../models/User.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'wimc-super-secret-key-2026';
 
 export interface AuthRequest extends Request {
-  user?: { id: string };
+  user?: IUser;
 }
 
-export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const userAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Authentication required' });
@@ -16,9 +17,18 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-    req.user = decoded;
+    const user = await User.findById(decoded.id);
+    
+    if (!user) {
+      return res.status(401).json({ message: 'User no longer exists' });
+    }
+
+    req.user = user;
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
+
+// Alias for compatibility
+export const requireAuth = userAuth;

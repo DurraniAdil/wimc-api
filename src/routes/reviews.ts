@@ -2,36 +2,39 @@ import express, { Request, Response } from 'express';
 import Review from '../models/Review.js';
 import { Cafe } from '../models/Cafe.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { userAuth, AuthRequest } from '../middleware/userAuth.js';
 
 const router = express.Router();
 
-// 1. POST /api/cafes/:id/reviews - Add a review
-router.post('/cafes/:id/reviews', async (req: Request, res: Response) => {
+// 1. POST /api/cafes/:id/reviews - Add a review (Authenticated Only)
+router.post('/cafes/:id/reviews', userAuth, async (req: AuthRequest, res: Response) => {
     try {
         const { rating, comment } = req.body;
         const cafeId = req.params.id;
+        const user = req.user;
+
+        if (!user) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
 
         // Validation
         if (!rating || rating < 1 || rating > 5) {
-            res.status(400).json({ error: 'Rating must be between 1 and 5' });
-            return;
+            return res.status(400).json({ error: 'Rating must be between 1 and 5' });
         }
 
         if (comment && comment.length > 500) {
-            res.status(400).json({ error: 'Comment must be 500 characters or less' });
-            return;
+            return res.status(400).json({ error: 'Comment must be 500 characters or less' });
         }
 
-        // Generate anonymousId
-        const randomDigits = Math.floor(1000 + Math.random() * 9000);
-        const anonymousId = `CafeGoer#${randomDigits}`;
+        const anonymousId = user.name;
 
         const review = new Review({
             cafeId,
             anonymousId,
             rating,
             comment,
-            isVisible: true
+            isVisible: true,
+            userId: user._id // Optional: track userId in review model if we want to expand later
         });
 
         await review.save();
