@@ -24,14 +24,14 @@ app.use(express.json());
 app.use('/api/cafes', cafeRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/upload', uploadRouter);
-app.use('/api', reviewsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/collections', collectionsRouter);
+app.use('/api', reviewsRouter);
 
 // ── Health check ────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', v: 'v2', timestamp: new Date().toISOString() });
 });
 
 // ── Start ───────────────────────────────────────────────────
