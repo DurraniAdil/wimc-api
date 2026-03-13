@@ -4,6 +4,10 @@ if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
+export const checkSendGridConfig = () => {
+  return !!(process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL);
+};
+
 export const sendPasswordResetEmail = async (
   toEmail: string,
   resetToken: string

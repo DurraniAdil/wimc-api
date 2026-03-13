@@ -86,12 +86,22 @@ authRouter.post('/forgot-password', async (req, res) => {
     user.resetPasswordExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
     await user.save({ validateBeforeSave: false });
 
-    await sendPasswordResetEmail(user.email, resetToken);
+    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+      console.error('SendGrid configuration missing');
+      return res.status(500).json({ message: 'Email service configuration missing' });
+    }
+
+    try {
+      await sendPasswordResetEmail(user.email, resetToken);
+    } catch (emailError: any) {
+      console.error('SendGrid error:', emailError.response?.body || emailError);
+      return res.status(500).json({ message: emailError.message || 'Error sending reset email' });
+    }
 
     res.json({ message: 'If that email exists, a reset link has been sent.' });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Forgot password error:', err);
-    res.status(500).json({ message: 'Error sending reset email' });
+    res.status(500).json({ message: err.message || 'Error sending reset email' });
   }
 });
 
