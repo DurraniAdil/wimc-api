@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import Review from '../models/Review.js';
+import { User } from '../models/User.js';
 import { Cafe } from '../models/Cafe.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { userAuth, AuthRequest } from '../middleware/userAuth.js';
@@ -30,14 +31,21 @@ router.post('/cafes/:id/reviews', userAuth, async (req: AuthRequest, res: Respon
 
         const review = new Review({
             cafeId,
+            userId: user._id,
             anonymousId,
             rating,
             comment,
-            isVisible: true,
-            userId: user._id // Optional: track userId in review model if we want to expand later
+            isVisible: true
         });
 
         await review.save();
+
+        // Increment User reviewCount
+        const userDoc = await User.findById(user._id);
+        if (userDoc) {
+            userDoc.reviewCount = (userDoc.reviewCount || 0) + 1;
+            await userDoc.save();
+        }
 
         // Update Cafe rating
         const cafe = await Cafe.findOne({ id: cafeId });
@@ -67,6 +75,40 @@ router.get('/cafes/:id/reviews', async (req: Request, res: Response) => {
         const reviews = await Review.find({ cafeId, isVisible: true })
             .sort({ createdAt: -1 })
             .select('anonymousId rating comment createdAt');
+        
+        res.json(reviews);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2.5 GET /api/user/reviews - Get reviews for the current user
+router.get('/user/reviews', userAuth, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?._id;
+        const reviews = await Review.aggregate([
+            { $match: { userId, isVisible: true } },
+            {
+                $lookup: {
+                    from: 'cafes',
+                    localField: 'cafeId',
+                    foreignField: 'id',
+                    as: 'cafeData'
+                }
+            },
+            { $unwind: '$cafeData' },
+            {
+                $project: {
+                    _id: 1,
+                    rating: 1,
+                    comment: 1,
+                    createdAt: 1,
+                    cafeName: '$cafeData.name',
+                    cafeId: '$cafeData.id'
+                }
+            },
+            { $sort: { createdAt: -1 } }
+        ]);
         
         res.json(reviews);
     } catch (err: any) {
