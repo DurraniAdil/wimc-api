@@ -67,3 +67,20 @@ collectionsRouter.post('/sync', requireAuth, async (req: AuthRequest, res) => {
     res.status(500).json({ message: 'Sync failed' });
   }
 });
+
+// Remove visited cafe
+collectionsRouter.post('/visited/remove', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { cafeId } = req.body;
+    const user = await User.findById(req.user?.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.collections.visited = user.collections.visited.filter(v => v.id !== cafeId);
+
+    await user.save();
+    res.json(user.collections);
+  } catch (error) {
+    res.status(500).json({ message: 'Error removing visited cafe' });
+  }
+});
+
