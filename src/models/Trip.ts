@@ -21,6 +21,7 @@ export interface ITripPoll {
 export interface ITrip extends Document {
   creatorId: mongoose.Types.ObjectId;
   title: string;
+  description?: string;
   eventDate: Date;
   selectedCafeId: string | null;
   selectedCafeName: string | null;
@@ -56,6 +57,7 @@ const TripPollSchema = new Schema({
 const TripSchema = new Schema({
   creatorId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   title: { type: String, required: true, trim: true },
+  description: { type: String, trim: true },
   eventDate: { type: Date, required: true },
   selectedCafeId: { type: String, default: null },
   selectedCafeName: { type: String, default: null },

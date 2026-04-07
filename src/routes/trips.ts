@@ -8,7 +8,7 @@ export const tripsRouter = express.Router();
 // ─── Create Trip ────────────────────────────────────────────
 tripsRouter.post('/', userAuth, async (req: AuthRequest, res) => {
   try {
-    const { title, eventDate, cafeId, cafeName, pollCafeOptions } = req.body;
+    const { title, description, eventDate, cafeId, cafeName, pollCafeOptions } = req.body;
 
     if (!title || !eventDate) {
       return res.status(400).json({ message: 'Title and event date are required' });
@@ -17,6 +17,7 @@ tripsRouter.post('/', userAuth, async (req: AuthRequest, res) => {
     const tripData: any = {
       creatorId: req.user!._id,
       title,
+      description,
       eventDate: new Date(eventDate),
       participants: [{
         userId: req.user!._id,
@@ -150,7 +151,7 @@ tripsRouter.post('/:tripId/rsvp', userAuth, async (req: AuthRequest, res) => {
 // ─── Vote on Poll ───────────────────────────────────────────
 tripsRouter.post('/:tripId/vote', userAuth, async (req: AuthRequest, res) => {
   try {
-    const { cafeId } = req.body;
+    const { cafeId, newCafeName } = req.body;
     const trip = await Trip.findById(req.params.tripId);
 
     if (!trip) {
@@ -169,17 +170,30 @@ tripsRouter.post('/:tripId/vote', userAuth, async (req: AuthRequest, res) => {
     }
 
     // Add new vote
-    const option = trip.poll.options.find(o => o.cafeId === cafeId);
+    let option = trip.poll.options.find(o => o.cafeId === cafeId);
+    
+    // Check if it's a dynamic suggestion
+    if (!option && newCafeName) {
+      trip.poll.options.push({
+        cafeId,
+        cafeName: newCafeName,
+        votes: []
+      });
+      option = trip.poll.options.find(o => o.cafeId === cafeId);
+    }
+
     if (!option) {
       return res.status(400).json({ message: 'Invalid cafe option' });
     }
     option.votes.push(userId);
 
-    // Auto-add as participant if not present
-    const isParticipant = trip.participants.some(
+    // Auto-add or update RSVP as 'going' when voting
+    const pIdx = trip.participants.findIndex(
       p => p.userId.toString() === userId.toString()
     );
-    if (!isParticipant) {
+    if (pIdx > -1) {
+      trip.participants[pIdx].rsvpStatus = 'going';
+    } else {
       trip.participants.push({
         userId,
         name: req.user!.name,
@@ -222,8 +236,9 @@ tripsRouter.patch('/:tripId', userAuth, async (req: AuthRequest, res) => {
       return res.status(403).json({ message: 'Only the creator can update this trip' });
     }
 
-    const { title, eventDate, status } = req.body;
-    if (title) trip.title = title;
+    const { title, description, eventDate, status } = req.body;
+    if (title !== undefined) trip.title = title;
+    if (description !== undefined) trip.description = description;
     if (eventDate) trip.eventDate = new Date(eventDate);
     if (status && ['planning', 'confirmed', 'completed', 'cancelled'].includes(status)) {
       trip.status = status;
