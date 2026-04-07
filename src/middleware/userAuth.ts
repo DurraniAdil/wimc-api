@@ -32,3 +32,25 @@ export const userAuth = async (req: AuthRequest, res: Response, next: NextFuncti
 
 // Alias for compatibility
 export const requireAuth = userAuth;
+
+/**
+ * Optional auth — attaches user if token present, but doesn't block.
+ */
+export const optionalUser = async (
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+    const user = await User.findById(decoded.id);
+    if (user) req.user = user;
+  } catch {}
+  next();
+};

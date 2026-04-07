@@ -12,6 +12,7 @@ import { authRouter } from './routes/auth.js';
 import { userRouter } from './routes/user.js';
 import { collectionsRouter } from './routes/collections.js';
 import { financeRouter } from './routes/finance.js';
+import { tripsRouter } from './routes/trips.js';
 import { checkEmailConfig } from './utils/sendEmail.js';
 
 connectDB();
@@ -31,6 +32,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/collections', collectionsRouter);
 app.use('/api/finance', financeRouter);
+app.use('/api/trips', tripsRouter);
 app.use('/api', reviewsRouter);
 
 // ── Health check ────────────────────────────────────────────
