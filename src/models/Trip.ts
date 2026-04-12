@@ -5,6 +5,7 @@ export interface ITripParticipant {
   userId: mongoose.Types.ObjectId;
   name: string;
   rsvpStatus: 'pending' | 'going' | 'maybe' | 'declined';
+  feedback?: 'success' | 'next_time' | null;
 }
 
 export interface ITripPollOption {
@@ -40,6 +41,11 @@ const TripParticipantSchema = new Schema({
     type: String,
     enum: ['pending', 'going', 'maybe', 'declined'],
     default: 'pending'
+  },
+  feedback: {
+    type: String,
+    enum: ['success', 'next_time', null],
+    default: null
   }
 }, { _id: false });
 

@@ -1,5 +1,6 @@
 import express from 'express';
 import { Trip } from '../models/Trip.js';
+import { User } from '../models/User.js';
 import { userAuth, optionalUser, AuthRequest } from '../middleware/userAuth.js';
 import mongoose from 'mongoose';
 
@@ -269,5 +270,56 @@ tripsRouter.delete('/:tripId', userAuth, async (req: AuthRequest, res) => {
   } catch (error) {
     console.error('Delete trip error:', error);
     res.status(500).json({ message: 'Error deleting trip' });
+  }
+});
+
+// ─── Post-Trip Feedback ─────────────────────────────────────
+tripsRouter.post('/:tripId/feedback', userAuth, async (req: AuthRequest, res) => {
+  try {
+    const { feedback } = req.body; // 'success' | 'next_time'
+    if (!['success', 'next_time'].includes(feedback)) {
+      return res.status(400).json({ message: 'Invalid feedback' });
+    }
+
+    const trip = await Trip.findById(req.params.tripId);
+    if (!trip) {
+      return res.status(404).json({ message: 'Trip not found' });
+    }
+
+    // Ensure trip is in the past
+    if (new Date(trip.eventDate) > new Date()) {
+      return res.status(400).json({ message: 'Trip has not happened yet' });
+    }
+
+    const userId = req.user!._id;
+    const participant = trip.participants.find(p => p.userId.toString() === userId.toString());
+
+    if (!participant) {
+      return res.status(403).json({ message: 'You were not a participant in this trip' });
+    }
+
+    participant.feedback = feedback;
+
+    // If success, add to user's visited collection
+    if (feedback === 'success' && trip.selectedCafeId) {
+      const user = await User.findById(userId);
+      if (user) {
+        // Check if already visited this cafe (to avoid duplicates from same trip)
+        const alreadyVisited = user.collections.visited.some(v => v.id === trip.selectedCafeId);
+        if (!alreadyVisited) {
+          user.collections.visited.unshift({
+            id: trip.selectedCafeId,
+            date: trip.eventDate as any
+          });
+          await user.save();
+        }
+      }
+    }
+
+    await trip.save();
+    res.json(trip);
+  } catch (error) {
+    console.error('Feedback error:', error);
+    res.status(500).json({ message: 'Error submitting feedback' });
   }
 });
