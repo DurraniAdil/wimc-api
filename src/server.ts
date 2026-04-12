@@ -35,6 +35,15 @@ app.use('/api/finance', financeRouter);
 app.use('/api/trips', tripsRouter);
 app.use('/api', reviewsRouter);
 
+// ── Root ────────────────────────────────────────────────────
+app.get('/', (_req, res) => {
+  res.json({ 
+    name: 'WIMC API',
+    status: 'online',
+    docs: '/api/health'
+  });
+});
+
 // ── Health check ────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
   res.json({ 
